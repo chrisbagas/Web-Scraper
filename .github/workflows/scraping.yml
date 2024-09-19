@@ -2,7 +2,7 @@ name: Run Jupyter Notebook
 
 on:
   schedule:
-    - cron: '0 0 * * *'  # Runs every day at 10 AM UTC (you can adjust this time)
+    - cron: '0 0 * * *'  # Runs every day at 10 AM UTC
   workflow_dispatch:  # Allows manual triggering
 
 jobs:
@@ -16,12 +16,15 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v2
       with:
-        python-version: '3.11'  # Specify your Python version, e.g., 3.9
+        python-version: '3.11'
+        cache: 'pip'
+    
 
     - name: Install dependencies
       run: |
-        pip install jupyter papermill
+        pip install -r requirements.txt
 
-    - name: Run Jupyter Notebook with Papermill
+    - name: Run Jupyter Notebook
       run: |
-        papermill IndomaretScraper.ipynb
+        jupyter execute IndomaretScraper.ipynb
+      shell: bash
