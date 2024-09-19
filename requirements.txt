@@ -1,0 +1,6 @@
+jupyterlab
+nbclient
+pandas
+matplotlib
+requests
+beautifulsoup4
