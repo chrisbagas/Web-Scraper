@@ -32,8 +32,8 @@ for target in targets:
     }
 
     response = requests.get(url, headers=headers)
-    # print(response.cookies)
-
+    print(response.cookies)
+    print(response)
     soup = BeautifulSoup(response.text, "html.parser")
     
     #Check if the search result is empty
