@@ -26,7 +26,7 @@ jobs:
 
     - name: Run Jupyter Notebook
       run: |
-        jupyter execute IndomaretScraper.py
+        python IndomaretScraper.py
       shell: bash
 
     - name: Upload Indomaret Excel Files
