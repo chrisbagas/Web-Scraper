@@ -27,4 +27,21 @@ jobs:
     - name: Run Jupyter Notebook
       run: |
         jupyter execute IndomaretScraper.ipynb
+        jupyter execute AlfagiftScraper.ipynb
       shell: bash
+
+    - name: Upload Indomaret Excel Files
+      run: |
+        python ./Uploader.py 
+          --release.dir=./ 
+          --file.name=INDOMARET_240923.xlsx 
+          --dropbox.token= ${{ secrets.DROPBOX_TOKEN }}
+          --dropbox.folder=Indomaret
+
+    - name: Upload Alfagift Excel Files
+      run: |
+        python ./Uploader.py 
+          --release.dir=./ 
+          --file.name=ALFAGIFT_240923.xlsx 
+          --dropbox.token= ${{ secrets.DROPBOX_TOKEN }}
+          --dropbox.folder=Alfagift
