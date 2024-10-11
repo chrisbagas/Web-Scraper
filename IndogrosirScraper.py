@@ -48,12 +48,12 @@ class IndogrosirData:
 
     def change_location(self, location):
         time.sleep(5)
-        scroll = self.wait.until(EC.visibility_of_element_located((By.XPATH,
-                                                                   '//android.widget.ScrollView')))
-        self.driver.execute_script("gesture: swipe", {
-            'elementId': scroll.id,
-            "percentage": 100,
-            "direction": "up"})
+        # scroll = self.wait.until(EC.visibility_of_element_located((By.XPATH,
+        #                                                            '//android.widget.ScrollView')))
+        # self.driver.execute_script("gesture: swipe", {
+        #     'elementId': scroll.id,
+        #     "percentage": 100,
+        #     "direction": "up"})
         alamat_button = self.wait.until(EC.visibility_of_element_located((By.XPATH,
                                                                           '//android.view.View[@content-desc="Kelola Alamat Penerima"]')))
         alamat_button.click()
@@ -339,13 +339,14 @@ class IndogrosirData:
 
 
 targets = ['royco bumbu pelezat serbaguna', 'bango manis 25g', 'bango manis 77g', 'bango manis 265g',
-           'sariwangi asli 1.85g', 'pepsodent white', 'lifebuoy ts',
+           'sariwangi asli 1.85g', 'pepsodent white', 'lifebuoy ts', 'lifebuoy 9ml',
            'rexona 9g', 'clear shampoo 9+2', 'sunsilk shampoo 9ml', 'glow lovely 7.5g',
            'sunlight jeruk nipis', 'rinso molto rose fresh', 'molto 10ml']
 locations = ['Medan', 'Ciputat', 'Ambon',
              'Makassar', 'Banjarmasin', 'Batam', 'Surabaya']
 #
-indogrosir_scrapper = IndogrosirData('9', 'emulator-5554', locations, targets)
+indogrosir_scrapper = IndogrosirData(
+    '7.1.2', '127.0.0.1:5555', locations, targets)
 # indogrosir_scrapper.toast()
 # indogrosir_scrapper.scrape()
 indogrosir_scrapper.extractor()
