@@ -88,11 +88,12 @@ class SuperindoData:
         self.driver.back()
         while True:
             try:
-                cancel_exit = self.driver.find_elements(
-                    (By.XPATH, '//android.widget.Button[@content-desc="Tidak"]'))
-                if cancel_exit:
-                    cancel_exit[0].click()
-                print("Banner not detected")
+                buy_buttom_check = self.driver.find_elements(
+                    (By.XPATH, '//android.widget.FrameLayout[@resource-id="android:id/content"]/android.widget.FrameLayout/android.widget.FrameLayout/android.view.View/android.view.View/android.view.View/android.widget.ImageView[1]"]'))
+                if buy_buttom_check:
+                    print("Banner not detected")
+                else:
+                    self.driver.back()
             except:
                 self.driver.back()
                 break
