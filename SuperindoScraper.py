@@ -21,7 +21,7 @@ class SuperindoData:
         self.version = version
         self.adb_name = adb_name
         self.driver = self.initialize_driver()
-        self.wait = WebDriverWait(self.driver, 20)  # Wait for up to 20 seconds
+        self.wait = WebDriverWait(self.driver, 10)  # Wait for up to 20 seconds
 
     def initialize_driver(self):
         desired_caps = {
@@ -85,17 +85,20 @@ class SuperindoData:
         change_location_button.click()
 
     def check_banner(self):
-        self.driver.back()
+        # self.driver.back()
         while True:
             try:
-                cancel_exit = self.driver.find_elements(
-                    (By.XPATH, '//android.widget.Button[@content-desc="Tidak"]'))
-                if cancel_exit:
-                    cancel_exit[0].click()
-                print("Banner not detected")
-            except:
+                belanja_button = self.wait.until(EC.visibility_of_element_located(
+                    (By.XPATH, '//android.widget.FrameLayout[@resource-id="android:id/content"]/android.widget.FrameLayout/android.widget.FrameLayout/android.view.View/android.view.View/android.view.View/android.widget.ImageView[1]')))
+                print(belanja_button)
+                if belanja_button:
+                    print("Banner not detected")
+                    break
+            except Exception as e:
+                print(e)
+                print("gagal menemunkan belanja button")
                 self.driver.back()
-                break
+                time.sleep(1)
 
     def extractor(self, previous_data=None):
 
@@ -145,7 +148,13 @@ class SuperindoData:
                             if len(buttons) > 2:
                                 clear_button = buttons[1]
                                 clear_button.click()
-                                break
+                                try:
+                                    camera_button = self.driver.find_element(
+                                        By.XPATH, '//android.view.View[@content-desc="Arahkan kamera ke barcode produk"]')
+                                    if camera_button:
+                                        self.driver.back()
+                                except:
+                                    break
 
                         retry = False
                     except Exception as e:
@@ -227,8 +236,8 @@ class SuperindoData:
                                         counter = 2
                                 text = text.strip().replace(".", "")
                                 if ('Rp' not in text and len(text) > 0 and not rp_detected
-                                    and 'Member' not in text and 'Harga' not in text
-                                    ):
+                                            and 'Member' not in text and 'Harga' not in text
+                                        ):
                                     if text.isnumeric():
                                         continue
                                     if (product_name is not None or product_price is not None or
