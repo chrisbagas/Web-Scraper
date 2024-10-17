@@ -270,10 +270,3 @@ aksesmu_scrapper = AksesmuData('7.1.2', '127.0.0.1:5555', locations, targets)
 # aksesmu_scrapper.scrape()
 aksesmu_scrapper.extractor()
 print(aksesmu_scrapper.result)
-
-
-# toko_button = self.driver.find_element(By.XPATH, '//android.widget.TextView[contains(@text, "Pengiriman dari")]')
-# toko_text = toko_button.text.split('dari')[1].split('(')[0].strip()
-# self.products[location] = {toko_text: {}}
-
-# 'Bandung', 'Surabaya', 'Semarang', 'Yogyakarta', 'Bali', 'Makassar', 'Medan', 'Palembang'
