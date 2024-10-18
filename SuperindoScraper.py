@@ -229,9 +229,10 @@ class SuperindoData:
                                 unit = text
                             else:  # Detect product name
                                 if product_name and product_price:  # Indicates a new product is found
-                                    if product_name not in products:
-                                        products[product_name] = [
-                                            product_price, product_original_price, unit]
+                                    combined_product_name = product_name + unit
+                                    if combined_product_name not in products:
+                                        products[combined_product_name] = [
+                                            product_name, product_price, product_original_price, unit]
                                         product_added = True
                                         counter = 2
                                 text = text.strip().replace(".", "")
@@ -242,15 +243,17 @@ class SuperindoData:
                                         continue
                                     if (product_name is not None or product_price is not None or
                                             product_original_price is not None):
-                                        product_name = product_price = product_original_price = discount_amount = None
+                                        product_name = product_price = product_original_price = unit = None
                                     product_name = text
 
                 if product_name and product_price:  # Indicates a new product is found
-                    if product_name not in products:
-                        products[product_name] = [
-                            product_price, product_original_price, unit]
+                    combined_product_name = product_name + unit
+                    if combined_product_name not in products:
+                        products[combined_product_name] = [
+                            product_name, product_price, product_original_price, unit]
+                        product_added = True
                         counter = 2
-                    product_name = product_price = product_original_price = None
+                    product_name = product_price = product_original_price = unit = None
 
                 scroll = self.wait.until(EC.visibility_of_element_located((By.XPATH,
                                                                            '//android.widget.ScrollView')))
@@ -279,7 +282,7 @@ class SuperindoData:
 
         # Iterate through the dictionary and extract the needed information
         for location, product_data in self.products.items():
-            for product_name, (final_price, base_price, unit) in product_data.items():
+            for combined_product_name, (product_name, final_price, base_price, unit) in product_data.items():
                 if '365' in product_name:
                     continue
                 final_price = float(final_price.replace(
@@ -287,11 +290,11 @@ class SuperindoData:
                 base_price = float(base_price.replace(
                     "Rp", "").replace(".", "").strip())
                 data.append([product_name, base_price,
-                            final_price, unit, location])
+                            final_price, unit, location, combined_product_name])
 
         # Create new DataFrame from the current data
         new_df = pd.DataFrame(
-            data, columns=['productName', 'basePrice', 'finalPrice', 'unit', 'location'])
+            data, columns=['productName', 'basePrice', 'finalPrice', 'unit', 'location', 'combinedProductName'])
 
         if previous_data and os.path.exists(previous_data):
             # Load previous data from the file
