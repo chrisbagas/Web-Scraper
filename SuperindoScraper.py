@@ -142,7 +142,9 @@ class SuperindoData:
                         # Go back after processing each target
                         self.driver.back()
                         while True:
+                            time.sleep(1)
                             search_text.click()
+                            time.sleep(1)
                             buttons = self.driver.find_elements(
                                 By.CLASS_NAME, 'android.widget.ImageView')
                             if len(buttons) > 2:
@@ -191,9 +193,12 @@ class SuperindoData:
             while True:
 
                 # Get the view group containing all TextViews
-
-                view_group = self.wait.until(EC.visibility_of_element_located((By.XPATH,
-                                                                              '//android.widget.ScrollView')))
+                try:
+                    view_group = self.wait.until(EC.visibility_of_element_located((By.XPATH,
+                                                                                   '//android.widget.ScrollView')))
+                except:
+                    view_group = self.wait.until(EC.visibility_of_element_located((By.XPATH,
+                                                                                   '//android.widget.FrameLayout[@resource-id="android:id/content"]/android.widget.FrameLayout/android.widget.FrameLayout/android.view.View/android.view.View/android.view.View/android.view.View[2]/android.view.View')))
                 # Find all TextView elements within the view group
                 text_views = view_group.find_elements(
                     by='class name', value='android.view.View')
@@ -227,48 +232,67 @@ class SuperindoData:
                                 rp_detected = False
                             elif 'ml' in text or 'gr' in text or 'kg' in text or 'ltr' in text or "'s" in text:
                                 unit = text
+                            elif 'Harga' in text or 'Member' in text:
+                                continue
                             else:  # Detect product name
                                 if product_name and product_price:  # Indicates a new product is found
-                                    if product_name not in products:
-                                        products[product_name] = [
-                                            product_price, product_original_price, unit]
+                                    if unit is not None:
+                                        combined_product_name = product_name + unit
+                                    else:
+                                        combined_product_name = product_name
+                                    if combined_product_name not in products:
+                                        products[combined_product_name] = [
+                                            product_name, product_price, product_original_price, unit]
                                         product_added = True
                                         counter = 2
                                 text = text.strip().replace(".", "")
                                 if ('Rp' not in text and len(text) > 0 and not rp_detected
-                                            and 'Member' not in text and 'Harga' not in text
+                                        and 'Member' not in text and 'Harga' not in text
                                         ):
                                     if text.isnumeric():
                                         continue
                                     if (product_name is not None or product_price is not None or
                                             product_original_price is not None):
-                                        product_name = product_price = product_original_price = discount_amount = None
+                                        product_name = product_price = product_original_price = unit = None
                                     product_name = text
 
                 if product_name and product_price:  # Indicates a new product is found
-                    if product_name not in products:
-                        products[product_name] = [
-                            product_price, product_original_price, unit]
+                    if unit is not None:
+                        combined_product_name = product_name + unit
+                    else:
+                        combined_product_name = product_name
+                    if combined_product_name not in products:
+                        products[combined_product_name] = [
+                            product_name, product_price, product_original_price, unit]
+                        product_added = True
                         counter = 2
-                    product_name = product_price = product_original_price = None
+                    product_name = product_price = product_original_price = unit = None
 
-                scroll = self.wait.until(EC.visibility_of_element_located((By.XPATH,
-                                                                           '//android.widget.ScrollView')))
-                if product_added:
-                    self.driver.execute_script("gesture: swipe", {
-                        'elementId': scroll.id,
-                        "percentage": 100,
-                        "direction": "up"})
+                scroll = None
+
+                try:
+                    scroll = self.wait.until(EC.visibility_of_element_located((By.XPATH,
+                                                                               '//android.widget.ScrollView')))
+                except:
+                    print('scroll not found')
+                if scroll is not None:
+                    if product_added:
+                        self.driver.execute_script("gesture: swipe", {
+                            'elementId': scroll.id,
+                            "percentage": 100,
+                            "direction": "up"})
+                    else:
+                        counter -= 1
+                        product_added = True
+                        self.driver.execute_script("gesture: swipe", {
+                            'elementId': scroll.id,
+                            "percentage": 100,
+                            "direction": "up"})
+                        if counter == 0:
+                            break
+                    product_added = False
                 else:
-                    counter -= 1
-                    product_added = True
-                    self.driver.execute_script("gesture: swipe", {
-                        'elementId': scroll.id,
-                        "percentage": 100,
-                        "direction": "up"})
-                    if counter == 0:
-                        break
-                product_added = False
+                    break
         except Exception as e:
             print(f"Error encountered while scraping: {e}")
         print(products)
@@ -279,7 +303,7 @@ class SuperindoData:
 
         # Iterate through the dictionary and extract the needed information
         for location, product_data in self.products.items():
-            for product_name, (final_price, base_price, unit) in product_data.items():
+            for combined_product_name, (product_name, final_price, base_price, unit) in product_data.items():
                 if '365' in product_name:
                     continue
                 final_price = float(final_price.replace(
@@ -287,11 +311,11 @@ class SuperindoData:
                 base_price = float(base_price.replace(
                     "Rp", "").replace(".", "").strip())
                 data.append([product_name, base_price,
-                            final_price, unit, location])
+                            final_price, unit, location, combined_product_name])
 
         # Create new DataFrame from the current data
         new_df = pd.DataFrame(
-            data, columns=['productName', 'basePrice', 'finalPrice', 'unit', 'location'])
+            data, columns=['productName', 'basePrice', 'finalPrice', 'unit', 'location', 'combinedProductName'])
 
         if previous_data and os.path.exists(previous_data):
             # Load previous data from the file
@@ -299,6 +323,8 @@ class SuperindoData:
 
             # Append the new data to the previous DataFrame
             combined_df = pd.concat([previous_data, new_df], ignore_index=True)
+            combined_df = combined_df.drop_duplicates(
+                subset=['combinedProductName'], keep='first')
             self.result = combined_df
         else:
             # If no previous data, set the new DataFrame as result
@@ -309,22 +335,13 @@ class SuperindoData:
         self.result.to_excel(file_name, index=False)
 
 
-# targets = ['clear shampoo', 'sunsilk shampoo', 'lifebuoy', 'tresemme', 'ponds',
-#            'glow &', 'vaseline', 'pepsodent pasta gigi',
-#            'closeup', 'lifebuoy sabun mandi', 'lux', 'rexona', 'axe', 'molto', 'sunlight',
-#            'wipol', 'vixal', 'royco', 'bango kecap', 'sariwangi', 'sarimurni', 'buavita',
-#            'head & shoulders', 'pantene shampoo', 'zinc', 'garnier', 'nivea',
-#            'marina', 'ciptadent pasta gigi', 'nuvo', 'giv', 'posh',
-#            'so klin',  'downy pelembut', 'mama lemon', 'super sol',
-#            'yuri porstex', 'masako',
-#            'sedaap kecap', 'abc kecap manis', 'sosro teh', 'tong tji', 'teh bendera',
-#            'country choice', 'citra', 'super pel', 'rinso']
+# targets = ['PANTENE SHAMPOO PRO-V TOTAL DAMAGE']
 # locations = ['Jakarta']
 
 # superindo_scrapper = SuperindoData(
 #     '7.1.2', '127.0.0.1:5555', locations, targets)
-# # superindo_scrapper.scrape()
-# superindo_scrapper.extractor()
+# superindo_scrapper.scrape()
+# # superindo_scrapper.extractor()
 # print(superindo_scrapper.result)
 
 
