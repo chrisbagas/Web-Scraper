@@ -323,7 +323,7 @@ class SuperindoData:
 
             # Append the new data to the previous DataFrame
             combined_df = pd.concat([previous_data, new_df], ignore_index=True)
-            combined_df = combined_df.drop_duplicates(
+            combined_df.drop_duplicates(
                 subset=['combinedProductName'], keep='first')
             self.result = combined_df
         else:
