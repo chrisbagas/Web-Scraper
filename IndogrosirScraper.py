@@ -327,11 +327,9 @@ class IndogrosirData:
          # Create new DataFrame from the current data
         new_df = pd.DataFrame(data, columns=[
             'productName', 'shelfPrice', 'netPrice', 'location'])
-
         if previous_data and os.path.exists(previous_data):
             # Load previous data from the file
             previous_data = pd.read_excel(previous_data)
-
             # Append the new data to the previous DataFrame
             combined_df = pd.concat([previous_data, new_df], ignore_index=True)
             combined_df.drop_duplicates(
@@ -342,8 +340,7 @@ class IndogrosirData:
             self.result = new_df
 
         file_name = f"INDOGROSIR_{datetime.now().strftime('%y%m%d')}.xlsx"
-        new_df.to_excel(file_name, index=False)
-        self.result = new_df
+        self.result.to_excel(file_name, index=False)
 
     def toast(self):
         while True:
