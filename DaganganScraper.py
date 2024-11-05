@@ -46,11 +46,28 @@ class DaganganData:
         options = UiAutomator2Options().load_capabilities(caps=desired_caps)
         return webdriver.Remote('http://127.0.0.1:4723', options=options)
 
+    def change_location(self, location):
+        location_button = self.wait.until(EC.visibility_of_element_located(
+            (By.XPATH, '//android.view.ViewGroup[@content-desc="text, text"]')))
+        location_button.click()
+        location_input = self.wait.until(EC.visibility_of_element_located(
+            (By.XPATH, '//android.widget.EditText[@resource-id="auto-complete-textinput"]')))
+        location_input.send_keys(location)
+        location_input.click()
+        select_location = self.wait.until(EC.visibility_of_element_located(
+            (By.XPATH, '//android.widget.ScrollView[@content-desc="auto-complete-list"]/android.view.ViewGroup/android.view.ViewGroup[1]')))
+        select_location.click()
+        mulai_belanja_button = self.wait.until(EC.visibility_of_element_located(
+            (By.XPATH, '//android.view.ViewGroup[@content-desc="Button"]'))
+        )
+        mulai_belanja_button.click()
+
     def extractor(self):
 
         self.products = {location: {} for location in self.location}
         for location in self.location:
             print('location: ', location)
+            self.change_location(location)
             time.sleep(6)
             search_bar = self.wait.until(
                 EC.visibility_of_element_located((By.XPATH, '//android.widget.EditText[@resource-id="text-input"]')))
@@ -251,7 +268,7 @@ targets = ['royco', 'bango', 'sariwangi',
            'pepsodent', 'lifebuoy',
            'rexona', 'clear', 'sunsilk', 'glow',
            'sunlight', 'rinso', 'molto']
-locations = ['Jakarta']
+locations = ['Sleman', 'Magetan', 'Singosari']
 
 dagangan_scrapper = DaganganData('7.1.2', '127.0.0.1:5555', locations, targets)
 # dagangan_scrapper.scrape()
