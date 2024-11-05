@@ -339,7 +339,7 @@ class IndogrosirData:
             # If no previous data, set the new DataFrame as result
             self.result = new_df
 
-        file_name = f"INDOGROSIR_{datetime.now().strftime('%y%m%d')}.xlsx"
+        file_name = f"../indogrosir/INDOGROSIR_{datetime.now().strftime('%y%m%d')}.xlsx"
         self.result.to_excel(file_name, index=False)
 
     def toast(self):
