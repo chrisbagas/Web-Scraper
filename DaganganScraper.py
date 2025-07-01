@@ -9,6 +9,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.keys import Keys
 from datetime import datetime
+import os
 
 
 class DaganganData:
@@ -54,15 +55,20 @@ class DaganganData:
             (By.XPATH, '//android.widget.EditText[@resource-id="auto-complete-textinput"]')))
         location_input.send_keys(location)
         location_input.click()
-        select_location = self.wait.until(EC.visibility_of_element_located(
-            (By.XPATH, '//android.widget.ScrollView[@content-desc="auto-complete-list"]/android.view.ViewGroup/android.view.ViewGroup[1]')))
-        select_location.click()
+        while True:
+            try:
+                select_location = self.wait.until(EC.visibility_of_element_located(
+                    (By.XPATH, '//android.widget.ScrollView[@content-desc="auto-complete-list"]/android.view.ViewGroup/android.view.ViewGroup[1]')))
+                select_location.click()
+                break
+            except Exception as e:
+                location_input.click()
         mulai_belanja_button = self.wait.until(EC.visibility_of_element_located(
             (By.XPATH, '//android.view.ViewGroup[@content-desc="Button"]'))
         )
         mulai_belanja_button.click()
 
-    def extractor(self):
+    def extractor(self, previous_data=None):
 
         self.products = {location: {} for location in self.location}
         for location in self.location:
@@ -116,7 +122,10 @@ class DaganganData:
                         retry = True
             # Go back after processing all targets
             self.driver.back()
-            self.dataframe()
+            if previous_data is None:
+                self.dataframe()
+        if previous_data is not None:
+            self.dataframe(previous_data)
         self.driver.quit()
 
     def scrape(self):
@@ -140,16 +149,17 @@ class DaganganData:
                 for title_view in product_views:
                     texts = title_view.find_elements(
                         by='class name', value='android.widget.TextView')
+                    quantity = 0
                     for text in texts:
                         text = text.get_attribute('text')
                         if 'Rp' in text and product_name is not None:  # Indicates it's a price, and name was found
                             price_parts = text.strip().replace('.', '').split('Rp')
                             for price_part in price_parts:
+                                price_part = price_part.strip()
                                 # Extract the price and unit (e.g., /PCS or /CTN)
                                 if len(price_part) > 1:
                                     # print(price_part)
                                     price_text = price_part
-                                    unit = ''
                                     if ('/' in price_part):
                                         price_text = price_text.split(
                                             '/')[0]
@@ -171,6 +181,17 @@ class DaganganData:
                                             print(
                                                 f"Error extracting quantity for {product_name}: {text}")
                                             price_per_unit = price
+                                    elif 'minimal' in text:
+                                        try:
+                                            price_per_unit = (
+                                                price*10) // quantity if price and quantity > 0 else price
+
+                                        except (IndexError, ValueError):
+                                            print(
+                                                f"Error extracting quantity for {product_name}: {text}")
+                                            price_per_unit = price
+                                    elif 'pcs' in text.lower():
+                                        quantity = 1
                                     else:
                                         price_per_unit = price  # Standard case with /PCS
 
@@ -201,12 +222,14 @@ class DaganganData:
                                         products[product_name]['min_price'] = product_min_price
                                         product_added = True
                                         counter = 2
+                            quantity = 0
                             # Reset for the next product
                             product_prices = []
                         elif ('promo' not in text.lower() and 'min' not in text and
                               'rekomendasi' not in text.lower() and 'beli' not in text.lower()
                               and 'Rp' not in text and 'ingatkan' not in text.lower() and
-                              'stok' not in text.lower()):
+                              'stok' not in text.lower() and 'sedang diskon' not in text.lower()
+                              and 'cek harga' not in text.lower()):
                             product_name = text
                             product_prices = []
 
@@ -245,7 +268,7 @@ class DaganganData:
         print(products)
         return products
 
-    def dataframe(self):
+    def dataframe(self, previous_data=None):
         data = []
 
         # Iterate through the dictionary and extract the needed information
@@ -255,22 +278,32 @@ class DaganganData:
                 net_price = price_data.get('min_price')
                 data.append([product_name, shelf_price, net_price, location])
 
-        # Create DataFrame
-        df = pd.DataFrame(data, columns=[
-                          'productName', 'basePrice', 'finalPrice', 'location'])
+        new_df = pd.DataFrame(data, columns=[
+            'productName', 'basePrice', 'finalPrice', 'location'])
+        if previous_data and os.path.exists(previous_data):
+            # Load previous data from the file
+            previous_data = pd.read_excel(previous_data)
+            # Append the new data to the previous DataFrame
+            combined_df = pd.concat([previous_data, new_df], ignore_index=True)
+            combined_df.drop_duplicates(
+                subset=['productName'], keep='first')
+            self.result = combined_df
+        else:
+            # If no previous data, set the new DataFrame as result
+            self.result = new_df
 
-        file_name = f"./dagangan/DAGANGAN_{datetime.now().strftime('%y%m%d')}.xlsx"
-        df.to_excel(file_name, index=False)
-        self.result = df
+        file_name = f"../dagangan/DAGANGAN_{datetime.now().strftime('%y%m%d')}.xlsx"
+        self.result.to_excel(file_name, index=False)
 
 
-targets = ['royco', 'bango', 'sariwangi',
-           'pepsodent', 'lifebuoy',
-           'rexona', 'clear', 'sunsilk', 'glow',
-           'sunlight', 'rinso', 'molto']
-locations = ['Sleman', 'Magetan', 'Singosari']
+# targets = ['royco', 'bango', 'sariwangi',
+#            'pepsodent', 'lifebuoy',
+#            'rexona', 'clear', 'sunsilk', 'glow',
+#            'sunlight', 'rinso', 'molto']
+# locations = ['Sleman', 'Magetan', 'Singosari']
 
-dagangan_scrapper = DaganganData('7.1.2', '127.0.0.1:5555', locations, targets)
+# dagangan_scrapper = DaganganData(
+#     '7.1.2', '127.0.0.1:5555', locations, ['sunlight'])
 # dagangan_scrapper.scrape()
-dagangan_scrapper.extractor()
-print(dagangan_scrapper.result)
+# dagangan_scrapper.extractor()
+# print(dagangan_scrapper.result)
