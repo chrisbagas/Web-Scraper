@@ -30,8 +30,8 @@ class IndogrosirData:
             'udid': str(self.adb_name),  # Replace with your device UDID
             # Replace with your Android version (e.g., 11)
             'platformVersion': str(self.version),
-            'appPackage': 'com.indogrosir.sd1.klikindogrosir',
-            'appActivity': 'com.example.klik_indogrosir_playground.MainActivity',
+            'appPackage': 'com.indogrosir.sd1.myindogrosirGetx',
+            'appActivity': 'com.example.superapp.MainActivity',
             'automationName': 'UiAutomator2',  # Use UiAutomator2 for Android
             'noReset': True,  # Keeps the app data between sessions
             'newCommandTimeout': 6000,  # Timeout for new commands to the server
@@ -55,9 +55,6 @@ class IndogrosirData:
         #     'elementId': scroll.id,
         #     "percentage": 100,
         #     "direction": "up"})
-        alamat_button = self.wait.until(EC.visibility_of_element_located((By.XPATH,
-                                                                          '//android.view.View[@content-desc="Kelola Alamat Penerima"]')))
-        alamat_button.click()
 
         alamat_found = False
         while not alamat_found:
@@ -66,16 +63,17 @@ class IndogrosirData:
             for alamat in alamats:
                 if location in alamat.get_attribute("content-desc"):
                     if alamat.find_elements(By.CLASS_NAME, 'android.widget.Button'):
-                        select_button = alamat.find_elements(
-                            By.XPATH, '//android.widget.Button[@content-desc="Pilih Alamat Penerima"]')
-                        if select_button:
-                            select_button[0].click()
-                            time.sleep(5)
+                        buttons = alamat.find_elements(
+                            By.CLASS_NAME, 'android.widget.Button')
+                        for button in buttons:
+                            if button.get_attribute("content-desc") == "Pilih Alamat Penerima":
+                                button.click()
+                                time.sleep(5)
                         alamat_found = True
                         break
             if not alamat_found:
                 alamats_scroll = self.wait.until(EC.visibility_of_element_located((By.XPATH,
-                                                                                   '//android.widget.FrameLayout[@resource-id="android:id/content"]/android.widget.FrameLayout/android.view.View/android.view.View/android.view.View/android.view.View/android.view.View[2]/android.view.View')))
+                                                                                   '//android.widget.FrameLayout[@resource-id="android:id/content"]/android.widget.FrameLayout/android.widget.FrameLayout/android.view.View/android.view.View/android.view.View/android.view.View/android.view.View[2]/android.view.View')))
                 self.driver.execute_script("gesture: swipe", {
                     'elementId': alamats_scroll.id,
                     "percentage": 100,
@@ -101,20 +99,19 @@ class IndogrosirData:
     def extractor(self, previous_data=None):
         time.sleep(15)
         self.check_ad_banner()
-        account_tab = self.wait.until(EC.visibility_of_element_located(
-            (By.XPATH, '//android.view.View[@content-desc="Akun\nTab 4 of 4"]')))
-        account_tab.click()
+
         self.products = {location: {} for location in self.location}
         for location in self.location:
             print('location: ', location)
             while True:
                 try:
                     self.check_ad_banner()
-                    location_text = self.wait.until(EC.visibility_of_element_located((By.XPATH,
-                                                                                      '//android.view.View[contains(@content-desc, "INDOGROSIR")]')))
-                    if location.lower() in location_text.get_attribute("content-desc").lower():
-                        time.sleep(2)
-                        break
+                    account_tab = self.wait.until(EC.visibility_of_element_located(
+                        (By.XPATH, '//android.view.View[@content-desc="Profil"]')))
+                    account_tab.click()
+                    location_button = self.wait.until(EC.visibility_of_element_located(
+                        (By.XPATH, '//android.widget.ImageView[@content-desc="Kelola Alamat"]')))
+                    location_button.click()
                     self.change_location(location)
                     self.check_ad_banner()
                     # Check if the location is changed
@@ -192,7 +189,7 @@ class IndogrosirData:
         try:
             while True:
                 view_group = self.wait.until(EC.visibility_of_element_located((By.XPATH,
-                                                                               '//android.widget.FrameLayout[@resource-id="android:id/content"]/android.widget.FrameLayout/android.view.View/android.view.View/android.view.View/android.view.View/android.view.View[2]/android.view.View[1]/android.view.View')))
+                                                                               '//android.widget.FrameLayout[@resource-id="android:id/content"]/android.widget.FrameLayout/android.widget.FrameLayout/android.view.View/android.view.View/android.view.View/android.view.View/android.view.View[2]')))
 
                 image_views = view_group.find_elements(
                     by='class name', value='android.widget.ImageView')
@@ -291,7 +288,7 @@ class IndogrosirData:
 
                 # Scroll for more products
                 scroll = self.wait.until(EC.visibility_of_element_located((By.XPATH,
-                                                                           '//android.widget.FrameLayout[@resource-id="android:id/content"]/android.widget.FrameLayout/android.view.View/android.view.View/android.view.View/android.view.View/android.view.View[2]/android.view.View[1]/android.view.View')))
+                                                                           '//android.widget.FrameLayout[@resource-id="android:id/content"]/android.widget.FrameLayout/android.widget.FrameLayout/android.view.View/android.view.View/android.view.View/android.view.View/android.view.View[2]/android.view.View[1]/android.view.View')))
                 if product_added:
                     self.driver.execute_script("gesture: swipe", {
                         'elementId': scroll.id,
@@ -312,7 +309,7 @@ class IndogrosirData:
                 product_added = False
         except Exception as e:
             print(f"Error encountered while scraping: {e}")
-        print(products)
+        # print(products)
         return products
 
     def dataframe(self, previous_data=None):
@@ -357,11 +354,11 @@ targets = ['royco bumbu pelezat serbaguna', 'bango manis 25g', 'bango manis 77g'
 locations = ['Medan', 'Ciputat', 'Ambon',
              'Makassar', 'Banjarmasin', 'Batam', 'Surabaya']
 #
-# indogrosir_scrapper = IndogrosirData(
-#     '7.1.2', '127.0.0.1:5555', locations, targets)
+indogrosir_scrapper = IndogrosirData(
+    '7.1.2', '127.0.0.1:5555', locations, targets)
 # # indogrosir_scrapper.toast()
-# indogrosir_scrapper.scrape()
-# indogrosir_scrapper.extractor()
+# # indogrosir_scrapper.scrape()
+indogrosir_scrapper.extractor()
 # print(indogrosir_scrapper.result)
 
 
