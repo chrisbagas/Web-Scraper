@@ -284,3 +284,4 @@ class AksesmuData:
 # # aksesmu_scrapper.scrape()
 # aksesmu_scrapper.extractor()
 # print(aksesmu_scrapper.result)
+# Update
