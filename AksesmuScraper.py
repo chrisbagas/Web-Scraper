@@ -9,6 +9,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.keys import Keys
 from datetime import datetime
+import os
 
 
 class AksesmuData:
@@ -46,7 +47,7 @@ class AksesmuData:
         options = UiAutomator2Options().load_capabilities(caps=desired_caps)
         return webdriver.Remote('http://127.0.0.1:4723', options=options)
 
-    def extractor(self):
+    def extractor(self, previous_data=None):
 
         self.products = {location: {} for location in self.location}
         for location in self.location:
@@ -117,8 +118,11 @@ class AksesmuData:
                             f"Error encountered while processing targets for location {location}: {e}. Retrying...")
                         retry = True
             # Go back after processing all targets
-            self.driver.back()
-            self.dataframe()
+            # self.driver.back()
+            if previous_data is None:
+                self.dataframe()
+        if previous_data is not None:
+            self.dataframe(previous_data)
         self.driver.quit()
 
     def scrape(self):
@@ -238,7 +242,7 @@ class AksesmuData:
         print(products)
         return products
 
-    def dataframe(self):
+    def dataframe(self, previous_data=None):
         data = []
 
         # Iterate through the dictionary and extract the needed information
@@ -251,22 +255,33 @@ class AksesmuData:
                 data.append([product_name, base_price,
                             final_price, location])
 
-        # Create DataFrame
-        df = pd.DataFrame(data, columns=[
-                          'productName', 'basePrice', 'finalPrice', 'location'])
+         # Create new DataFrame from the current data
+        new_df = pd.DataFrame(data, columns=[
+            'productName', 'basePrice', 'finalPrice', 'location'])
+        if previous_data and os.path.exists(previous_data):
+            # Load previous data from the file
+            previous_data = pd.read_excel(previous_data)
+            # Append the new data to the previous DataFrame
+            combined_df = pd.concat([previous_data, new_df], ignore_index=True)
+            combined_df.drop_duplicates(
+                subset=['productName'], keep='first')
+            self.result = combined_df
+        else:
+            # If no previous data, set the new DataFrame as result
+            self.result = new_df
 
-        file_name = f"./aksesmu/AKSESMU_{datetime.now().strftime('%y%m%d')}.xlsx"
-        df.to_excel(file_name, index=False)
-        self.result = df
+        file_name = f"../aksesmu/AKSESMU_{datetime.now().strftime('%y%m%d')}.xlsx"
+        self.result.to_excel(file_name, index=False)
 
 
-targets = ['royco', 'bango', 'sariwangi',
-           'pepsodent white', 'lifebuoy',
-           'rexona', 'clear', 'sunsilk', 'glow lovely',
-           'sunlight', 'rinso molto', 'molto']
-locations = ['Jakarta']
+# targets = ['royco', 'bango', 'sariwangi',
+#            'pepsodent white', 'lifebuoy',
+#            'rexona', 'clear', 'sunsilk', 'glow lovely',
+#            'sunlight', 'rinso molto', 'molto']
+# locations = ['Jakarta']
 
-aksesmu_scrapper = AksesmuData('7.1.2', '127.0.0.1:5555', locations, targets)
-# aksesmu_scrapper.scrape()
-aksesmu_scrapper.extractor()
-print(aksesmu_scrapper.result)
+# aksesmu_scrapper = AksesmuData('7.1.2', '127.0.0.1:5555', locations, targets)
+# # aksesmu_scrapper.scrape()
+# aksesmu_scrapper.extractor()
+# print(aksesmu_scrapper.result)
+# Update
