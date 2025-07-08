@@ -10,7 +10,7 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 # Retry strategy
 retry_strategy = Retry(
-    total=5,
+    total=10,
     backoff_factor=1,
     status_forcelist=[429, 500, 502, 503, 504],
 )
@@ -116,7 +116,7 @@ def get_product_data(promo_sku, urls):
                             if href.startswith(f'/{main_url}/etalase/'):
                                 etalase_links.add("https://www.tokopedia.com" + href)
     
-                time.sleep(5)
+                time.sleep(15)
     
             # Step 2: Crawl all products under each etalase
             for etalase_url in etalase_links:
@@ -144,7 +144,7 @@ def get_product_data(promo_sku, urls):
                             product_info.append(main_url)
                             products_data.append(product_info)
     
-                    time.sleep(5)
+                    time.sleep(15)
  
             # Combine with existing DataFrame
             new_df = pd.DataFrame(products_data, columns=["productName", "basePrice", "finalPrice", "discountPercent", "url"])
