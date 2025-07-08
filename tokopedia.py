@@ -149,23 +149,33 @@ def get_product_data(promo_sku, urls):
             # Combine with existing DataFrame
             new_df = pd.DataFrame(products_data, columns=["productName", "basePrice", "finalPrice", "discountPercent", "url"])
             promo_sku = pd.concat([promo_sku, new_df], ignore_index=True)
-            promo_sku.drop_duplicates(subset=["productName"], inplace=True)
- 
+            
+        
+
     except Exception as e:
         print(f"Error: {e}")
  
     return promo_sku
  
 
-
+from datetime import datetime
+current_date = datetime.today()
 
 print("Start Scraping Tokopedia")
-urls = ['unilever','unilevermall', 'rumah-bersih-unilever', 'unilever-food']
+print(current_date)
+urls = ['rumah-bersih-unilever', 'unilevermall', 'unilever-food', 'unilever', 'unilever-hair-beauty-studio', 
+'daily-care-by-unilever', 'unilever-international-shop']
+
 # Execute the function and get the product data
 promo_sku = get_product_data(promo_sku, urls)
+
+promo_sku.sort_values('finalPrice', ascending=True, inplace=True)
+promo_sku.drop_duplicates(subset=["productName"], keep='first', inplace=True)
 
 parent_folder = "c:/Users/CDF-Automation.Indon/OneDrive - Unilever/Documents/Data Scraping/"
 file_name = f"{parent_folder}tokopedia/TOKOPEDIA_{datetime.now().strftime('%y%m%d')}.xlsx"
 promo_sku.to_excel(file_name,index=False)
+current_date = datetime.today()
 print("Finished Scraping Tokopedia")
+print(current_date)
 print(file_name)
