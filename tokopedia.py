@@ -10,7 +10,7 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 # Retry strategy
 retry_strategy = Retry(
-    total=10,
+    total=5,
     backoff_factor=1,
     status_forcelist=[429, 500, 502, 503, 504],
 )
@@ -116,7 +116,7 @@ def get_product_data(promo_sku, urls):
                             if href.startswith(f'/{main_url}/etalase/'):
                                 etalase_links.add("https://www.tokopedia.com" + href)
     
-                time.sleep(15)
+                time.sleep(5)
     
             # Step 2: Crawl all products under each etalase
             for etalase_url in etalase_links:
@@ -144,28 +144,38 @@ def get_product_data(promo_sku, urls):
                             product_info.append(main_url)
                             products_data.append(product_info)
     
-                    time.sleep(15)
+                    time.sleep(5)
  
             # Combine with existing DataFrame
             new_df = pd.DataFrame(products_data, columns=["productName", "basePrice", "finalPrice", "discountPercent", "url"])
             promo_sku = pd.concat([promo_sku, new_df], ignore_index=True)
-            promo_sku.drop_duplicates(subset=["productName"], inplace=True)
- 
+            
+        
+
     except Exception as e:
         print(f"Error: {e}")
  
     return promo_sku
  
 
-
+from datetime import datetime
+current_date = datetime.today()
 
 print("Start Scraping Tokopedia")
-urls = ['unilever','unilevermall', 'rumah-bersih-unilever', 'unilever-food']
+print(current_date)
+urls = ['rumah-bersih-unilever', 'unilevermall', 'unilever-food', 'unilever', 'unilever-hair-beauty-studio', 
+'daily-care-by-unilever', 'unilever-international-shop']
+
 # Execute the function and get the product data
 promo_sku = get_product_data(promo_sku, urls)
+
+promo_sku.sort_values('finalPrice', ascending=True, inplace=True)
+promo_sku.drop_duplicates(subset=["productName"], keep='first', inplace=True)
 
 parent_folder = "c:/Users/CDF-Automation.Indon/OneDrive - Unilever/Documents/Data Scraping/"
 file_name = f"{parent_folder}tokopedia/TOKOPEDIA_{datetime.now().strftime('%y%m%d')}.xlsx"
 promo_sku.to_excel(file_name,index=False)
+current_date = datetime.today()
 print("Finished Scraping Tokopedia")
+print(current_date)
 print(file_name)
